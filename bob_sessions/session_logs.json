@@ -1,0 +1,6 @@
+{
+  "sessions": [],
+  "schema_version": "1.0.0",
+  "project": "TEST-ARCHON",
+  "description": "Formal event log for IBM Bob Hackathon 2.0 evaluation. Every orchestrator action is recorded here."
+}
