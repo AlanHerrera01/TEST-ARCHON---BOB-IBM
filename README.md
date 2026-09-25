@@ -6,6 +6,18 @@ TEST-ARCHON automatically analyses every pull-request, identifies impacted modul
 
 ---
 
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [🚀 Inicio Rápido (ES)](doc/INICIO-RAPIDO.md) | Guía paso a paso para arrancar el proyecto localmente |
+| [🚀 Quickstart (EN)](doc/QUICKSTART.md) | Step-by-step guide to run the project locally |
+| [🔧 Troubleshooting (ES+EN)](doc/TROUBLESHOOTING.md) | Solución de errores comunes / Common error fixes |
+| [📐 Arquitectura Técnica (ES)](doc/TECNICO.md) | Documentación técnica completa en español |
+| [📐 Technical Architecture (EN)](doc/TECHNICAL.md) | Full technical documentation in English |
+
+---
+
 ## Architecture
 
 TEST-ARCHON follows strict **Hexagonal Architecture (Ports & Adapters)** and **SOLID principles**.
