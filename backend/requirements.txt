@@ -4,6 +4,7 @@
 # Web framework
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
+mangum==0.17.0
 
 # Testing (used by TestRunnerAdapter)
 pytest==8.2.0
