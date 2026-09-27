@@ -269,13 +269,17 @@ class LocalGitAdapter(GitPort):
         )
 
     def _run_git(self, args: list[str]) -> str:
-        result = subprocess.run(
-            ["git"] + args,
-            cwd=self._repo_path,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=self._repo_path,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError:
+            # git binary not available (e.g. Vercel serverless) — trigger demo fallback
+            raise DiffParseError("git executable not found")
         if result.returncode != 0:
             raise DiffParseError(result.stderr.strip() or f"git {' '.join(args)} failed")
         return result.stdout
