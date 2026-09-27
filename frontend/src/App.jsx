@@ -105,7 +105,26 @@ export default function App() {
       sseRef.current = close
 
       try {
-        setSummary(await runPipeline(params))
+        const result = await runPipeline(params)
+        setSummary(result)
+        // Inject a final synthetic event so the terminal always shows the result
+        setEvents((prev) => [
+          ...prev,
+          {
+            agent: 'Orchestrator',
+            event_type: 'completed',
+            payload: {
+              passed: result.passed,
+              failed: result.failed,
+              tests_generated: result.tests_generated,
+              tests_healed: result.tests_healed,
+              coverage_percent: result.coverage_percent,
+              analysis_summary: result.analysis_summary,
+              bobcoins_saved: result.bobcoins_saved,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        ])
       } catch (err) {
         setError(err.message)
       } finally {
