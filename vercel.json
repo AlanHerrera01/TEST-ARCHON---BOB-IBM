@@ -2,23 +2,10 @@
   "version": 2,
   "outputDirectory": "frontend/dist",
   "buildCommand": "cd frontend && npm install && npm run build",
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/:path*",
+      "destination": "/api/index.py"
     }
   ]
 }
