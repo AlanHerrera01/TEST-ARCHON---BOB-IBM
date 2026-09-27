@@ -1,19 +1,14 @@
 {
   "version": 2,
-  "framework": "vite",
-  "rootDirectory": "frontend",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
   "functions": {
-    "api/index.py": {
+    "frontend/api/index.py": {
       "runtime": "python3.9"
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "dest": "/frontend/api/index.py"
     },
     {
       "handle": "filesystem"
