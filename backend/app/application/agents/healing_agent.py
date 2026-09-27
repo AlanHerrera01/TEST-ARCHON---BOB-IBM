@@ -10,6 +10,7 @@ Strategy:
 """
 from __future__ import annotations
 
+import os
 import re
 
 from app.domain.exceptions import HealingError
@@ -80,7 +81,17 @@ class HealingAgent:
                 continue
             seen_modules.add(module)
 
-            source = test_sources.get(result.test_name, "# source not available")
+            # test_sources is keyed by file path (e.g. "tests/test_foo.py"),
+            # but result.test_name is a pytest node-id like
+            # "tests/test_foo.py::test_bar" — _infer_module already extracts
+            # the file path portion, so use that directly.
+            source = test_sources.get(module, "# source not available")
+            if source == "# source not available":
+                # Normalise path separators and try basename fallback
+                for key, val in test_sources.items():
+                    if os.path.basename(key) == os.path.basename(module):
+                        source = val
+                        break
             error_ctx = _extract_error_context(result)
 
             prompt = (

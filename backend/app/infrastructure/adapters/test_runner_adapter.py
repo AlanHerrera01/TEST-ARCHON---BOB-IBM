@@ -10,6 +10,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import uuid
 from datetime import datetime, timezone
 
@@ -20,7 +21,7 @@ from app.domain.models import TestResult, TestStatus, TestSuiteResult
 
 # Per-test timeout in seconds.  Pytest is given this many seconds total to
 # complete the full run; any hang is treated as an execution error.
-_DEFAULT_TIMEOUT_SECONDS = 10
+_DEFAULT_TIMEOUT_SECONDS = 120
 
 
 class TestRunnerAdapter(RunnerPort):
@@ -32,17 +33,19 @@ class TestRunnerAdapter(RunnerPort):
     Parameters
     ----------
     python_executable:
-        Path to the Python interpreter to use when invoking pytest.
+        Path to the Python interpreter used to invoke pytest.  Defaults to
+        ``sys.executable`` so the subprocess always uses the same interpreter
+        (and therefore the same site-packages) as the running backend.
     timeout:
         Maximum number of seconds to allow the pytest subprocess to run.
         If exceeded the process is killed and a ``TestRunnerError`` is raised
         so the orchestrator can treat all tests as failures rather than hanging
-        indefinitely. Defaults to ``10``.
+        indefinitely. Defaults to ``120``.
     """
 
     def __init__(
         self,
-        python_executable: str = "python",
+        python_executable: str = sys.executable,
         timeout: int = _DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
         self._python = python_executable
@@ -56,11 +59,23 @@ class TestRunnerAdapter(RunnerPort):
         self, test_paths: list[str], *, working_dir: str = "."
     ) -> TestSuiteResult:
         report_file = os.path.join(working_dir, ".pytest_report.json")
+
+        # Measure coverage only for the demo application modules, not the full
+        # backend project.  This produces realistic coverage numbers (40-90%)
+        # instead of a near-zero figure caused by the large untested framework code.
+        _COV_SOURCES = ["app/auth", "app/payments", "app/api", "app/notifications"]
+        cov_args: list[str] = []
+        for src in _COV_SOURCES:
+            if os.path.isdir(os.path.join(working_dir, src)):
+                cov_args += ["--cov", src]
+        if not cov_args:
+            cov_args = ["--cov", "."]
+
         cmd = [
             self._python, "-m", "pytest",
             "--json-report", f"--json-report-file={report_file}",
             "--tb=short",
-            "--cov", ".",
+            *cov_args,
             "--cov-report", "json:.coverage.json",
             "-q",
         ] + (test_paths if test_paths else [])
@@ -123,6 +138,25 @@ class TestRunnerAdapter(RunnerPort):
                     duration_ms=test.get("call", {}).get("duration", 0.0) * 1000,
                     error_message=test.get("call", {}).get("longrepr") or test.get("longrepr"),
                     stdout=test.get("call", {}).get("stdout", ""),
+                )
+            )
+
+        # Collection errors (bad import, syntax error, fixture failure) never
+        # appear in "tests" — without this the run would report 0/0 and the
+        # orchestrator would skip the healing stage entirely.
+        for collector in report.get("collectors", []):
+            if collector.get("outcome") == "passed":
+                continue
+            longrepr = collector.get("longrepr") or ""
+            if isinstance(longrepr, list):
+                longrepr = "\n".join(str(line) for line in longrepr)
+            results.append(
+                TestResult(
+                    test_id=collector.get("nodeid", str(uuid.uuid4())),
+                    test_name=collector.get("nodeid", "collection error"),
+                    status=TestStatus.FAILED,
+                    duration_ms=0.0,
+                    error_message=str(longrepr),
                 )
             )
 

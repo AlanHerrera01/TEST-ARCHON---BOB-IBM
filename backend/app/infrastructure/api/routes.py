@@ -39,11 +39,20 @@ class RunRequest(BaseModel):
     use_github: bool = False
 
 
+class ImpactedModuleOut(BaseModel):
+    """A single file flagged by the ImpactAgent, with its risk level."""
+
+    path: str
+    severity: str
+    reason: str = ""
+
+
 class RunResponse(BaseModel):
     session_id: str
     diff_sha: str
     files_changed: int
     modules_impacted: int
+    impacted_modules: list[ImpactedModuleOut] = []
     tests_generated: int
     tests_healed: int
     passed: int
@@ -61,7 +70,7 @@ def _build_orchestrator(repo_path: str, use_github: bool) -> Orchestrator:
     llm = BobLLMAdapter(
         api_key=os.environ["IBM_API_KEY"],
         project_id=os.environ["IBM_PROJECT_ID"],
-        model_id=os.environ.get("IBM_MODEL_ID", "ibm/granite-13b-chat-v2"),
+        model_id=os.environ.get("IBM_MODEL_ID", "meta-llama/llama-3-3-70b-instruct"),
         base_url=os.environ.get("IBM_BASE_URL", "https://us-south.ml.cloud.ibm.com"),
     )
 

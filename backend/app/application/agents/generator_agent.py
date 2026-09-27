@@ -101,6 +101,10 @@ class GeneratorAgent:
     ) -> list[CoverageGap]:
         gaps: list[CoverageGap] = []
         for module in analysis.impacted_modules:
+            # __init__.py files are package markers; they expose no testable
+            # public API and generate invalid filenames (test___init___generated.py).
+            if os.path.basename(module.path) == "__init__.py":
+                continue
             expected_test = _module_to_test_name(module.path)
             if expected_test not in existing_tests:
                 gaps.append(
