@@ -265,12 +265,25 @@ class Orchestrator:
         self, tests: list[GeneratedTest], *, overwrite: bool = False
     ) -> list[str]:
         """Write generated test files to disk and return their paths."""
+        # On read-only filesystems (Vercel serverless) fall back to /tmp/tests/
+        preferred_dir = os.path.join(self._source_root, "tests")
+        try:
+            os.makedirs(preferred_dir, exist_ok=True)
+            # Probe writability
+            _probe = os.path.join(preferred_dir, ".write_probe")
+            with open(_probe, "w") as _f:
+                _f.write("")
+            os.remove(_probe)
+            test_dir = preferred_dir
+        except OSError:
+            test_dir = "/tmp/tests"
+            os.makedirs(test_dir, exist_ok=True)
+
         paths: list[str] = []
         for test in tests:
             stem = os.path.splitext(os.path.basename(test.target_module))[0]
             filename = f"test_{stem}_generated.py"
-            out_path = os.path.join(self._source_root, "tests", filename)
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            out_path = os.path.join(test_dir, filename)
             if not os.path.exists(out_path) or overwrite:
                 with open(out_path, "w", encoding="utf-8") as fh:
                     fh.write(test.test_code)
