@@ -139,13 +139,17 @@ def health() -> dict:
 
 @router.get("/sessions", summary="Retrieve all session logs")
 def get_sessions() -> dict:
-    """Return the contents of bob_sessions/session_logs.json."""
+    """Return the contents of session_logs.json (local or /tmp on serverless)."""
     import json
 
-    log_path = os.path.join(
+    local_path = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "..", "..", "..", "..", "bob_sessions", "session_logs.json"
-    )
-    log_path = os.path.abspath(log_path)
+    ))
+    tmp_path = "/tmp/session_logs.json"
+
+    # Prefer local path if it exists, fall back to /tmp (Vercel serverless)
+    log_path = local_path if os.path.exists(local_path) else tmp_path
+
     if not os.path.exists(log_path):
         return {"sessions": []}
     with open(log_path, encoding="utf-8") as fh:

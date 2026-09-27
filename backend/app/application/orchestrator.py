@@ -42,9 +42,11 @@ from app.application.agents.healing_agent import HealingAgent
 # Session log writer (pure Python file I/O)
 # ---------------------------------------------------------------------------
 
-SESSION_LOG_PATH = os.path.join(
+# Use /tmp on read-only filesystems (Vercel serverless), fall back to local bob_sessions/
+_LOCAL_LOG = os.path.join(
     os.path.dirname(__file__), "..", "..", "..", "..", "bob_sessions", "session_logs.json"
 )
+SESSION_LOG_PATH = "/tmp/session_logs.json" if not os.access(os.path.dirname(_LOCAL_LOG) if os.path.exists(os.path.dirname(_LOCAL_LOG)) else "/var", os.W_OK) else _LOCAL_LOG
 
 
 def _write_event(event: OrchestratorEvent, log_path: str = SESSION_LOG_PATH) -> None:
